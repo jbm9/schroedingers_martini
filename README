@@ -1,9 +1,15 @@
-.skel
-=====
+schroedingers_martini
+=====================
 
-This is a skeleton project.  It needs better documentation.
+Schroedinger's Martin -- A submission for BarBot 2013.75
+
+This is the work of Jonathan Foote and Josh Myer <josh@joshisanerd.com>
+
+This repository contains the atoms and bits that make up
+Schroedinger's Martini.
+
 
 Contents:
 
-web/ -- An empty website for this thing
-code/ -- An empty directory for code for this thing
+atoms/ -- The 3D printed bits
+bits/ -- The firmware, currently Arduino-driven
