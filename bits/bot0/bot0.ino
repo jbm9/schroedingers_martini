@@ -20,17 +20,18 @@ enum SMPins {
 };
 
 enum ServoJunk {
-  ServoLeftStart = 0,
-  ServoLeftStop = 80,
+  ServoLeftStart = 5,
+  ServoLeftStop = 110,
 
-  ServoRightStart = 170,
-  ServoRightStop = 90,
+  ServoRightStart = 175,
+  ServoRightStop = 60,
 };
 
-#define N_SERVO_STEPS 10
+#define N_SERVO_STEPS 15
 
-int servo_steps[N_SERVO_STEPS] = { 12, 24, 36, 46,  54,
-				   62, 68, 74, 78,  80, };
+int servo_steps[N_SERVO_STEPS] = { 0, 10, 20, 35, 50,
+                                   58, 66, 74, 82, 90,
+				   95, 100, 105, 108, 110, };
 
 
 enum Delays {
@@ -50,9 +51,54 @@ void geiger_isr() {
   geiger_counter++;
 }
 
+
+void pour(uint8_t which_servo) {
+  uint8_t led_intensity = 255; // How bright to pound the LED for the showy bits below
+  uint8_t brightness = 128;
+
+  for (int i = 0; i < N_SERVO_STEPS; i++) {
+
+    if (which_servo) {
+      servo_right.write(ServoRightStart - servo_steps[i]);
+      Serial.println(ServoRightStart - servo_steps[i]);
+    } else {
+      servo_left.write(ServoLeftStart + servo_steps[i]);
+      Serial.println(ServoLeftStart + servo_steps[i]);
+    }
+    
+    analogWrite(PIN_BUTTON_LED, brightness);
+    brightness -= 255/(2*N_SERVO_STEPS);
+    delay(100);
+  }
+
+  Serial.println("Returning cup to zero");
+  delay(250);
+
+  Serial.println("Returning cup to zero");
+  for (int i = N_SERVO_STEPS-1; i >= 0; i--) {
+    if (which_servo) {
+      servo_right.write(ServoRightStart - servo_steps[i]);
+      Serial.println(ServoRightStart - servo_steps[i]);
+    } else {
+      servo_left.write(ServoLeftStart + servo_steps[i]);
+      Serial.println(ServoLeftStart + servo_steps[i]);
+    }
+    analogWrite(PIN_BUTTON_LED, brightness);
+    brightness -= 255/(2*N_SERVO_STEPS);
+    Serial.println(brightness);
+    delay(100);
+  }
+
+  analogWrite(PIN_BUTTON_LED, led_intensity);
+  delay(100);
+
+}
+
+
+
 void setup() {
   Serial.begin(9600);
-  Serial.println("Schroedinger's Martini Bot v0.1");
+  //  Serial.println("Schroedinger's Martini Bot v0.1");
 
   geiger_counter = 0;
   attachInterrupt(0, geiger_isr, RISING);
@@ -63,28 +109,25 @@ void setup() {
 
   pinMode(PIN_BUTTON_LED, OUTPUT);
 
-  pinMode(PIN_SERVO_L, OUTPUT);
-  pinMode(PIN_SERVO_R, OUTPUT);
-
   pinMode(PIN_DIAGNOSTIC, OUTPUT);
 
+  servo_left.attach(9);
+  servo_right.attach(10);
 
-  servo_left.attach(PIN_SERVO_L);
-  servo_right.attach(PIN_SERVO_R);
-
-  servo_left.write(ServoLeftStop);
-  servo_right.write(ServoRightStop);
-
-  delay(1000);
   servo_left.write(ServoLeftStart);
   servo_right.write(ServoRightStart);
+
+  pour(0);
+  pour(1);
 
 }
 
 
+
+
 void loop() {
   Serial.print("Loop! ");
-  Serial.println(geiger_counter);
+  //  Serial.println(geiger_counter);
   geiger_counter = 0;
 
   /* ****************************** */
@@ -93,7 +136,7 @@ void loop() {
   uint8_t do_breathe = 1;
   uint8_t brightness = 0;
 
-  Serial.println("Waiting");
+  //  Serial.println("Waiting");
 
   while(do_breathe) { // TODO Make LED "breathe" while waiting for input: http://sean.voisen.org/blog/2011/10/breathing-led-with-arduino/
 
@@ -129,46 +172,16 @@ void loop() {
 
   /* ****************************** */
   // Decide which servo to pour from
-  Serial.println(geiger_counter);
+  //  Serial.println(geiger_counter);
   uint8_t which_servo = geiger_counter & 1;
 
   /* ****************************** */
   // Commence the jigglin'!
 
   Serial.print("Pouring: ");
-  Serial.println(which_servo ? "R" : "L");
+  //  Serial.println(which_servo ? "R" : "L");
 
-  for (int i = 0; i < N_SERVO_STEPS; i++) {
-    if (which_servo) {
-      servo_right.write(ServoRightStart - servo_steps[i]);
-      Serial.println(ServoRightStart - servo_steps[i]);
-    } else {
-      servo_left.write(ServoLeftStart + servo_steps[i]);
-      Serial.println(ServoLeftStart + servo_steps[i]);
-    }
-    analogWrite(PIN_BUTTON_LED, brightness);
-    brightness -= 255/(2*N_SERVO_STEPS);
-    delay(25);
-  }
-
-  delay(250);
-
-  Serial.println("Returning cup to zero");
-  for (int i = N_SERVO_STEPS; i >= 0; i--) {
-    if (which_servo) {
-      servo_right.write(ServoRightStart - servo_steps[i]);
-      Serial.println(ServoRightStart - servo_steps[i]);
-    } else {
-      servo_left.write(ServoLeftStart + servo_steps[i]);
-      Serial.println(ServoLeftStart + servo_steps[i]);
-    }
-    analogWrite(PIN_BUTTON_LED, brightness);
-    brightness -= 255/(2*N_SERVO_STEPS);
-    delay(25);
-  }
-
-  analogWrite(PIN_BUTTON_LED, led_intensity);
-  delay(100);
+  pour(which_servo);
 
 
   digitalWrite(PIN_DIAGNOSTIC, 1);
